@@ -57,7 +57,7 @@ function selectProduct() {
           }
           return itemsArray;
         },
-        message: "\nSelect the ID of the product you would like to purchase".yellow
+        message: "\nSelect the ID of the product you would like to purchase.".yellow
       },
       {
         name: "units",

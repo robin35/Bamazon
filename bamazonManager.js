@@ -59,9 +59,9 @@ function displayMenu() {
         else if (answer.selection === "Add to Inventory") {
           addInv();
         }
-        // else if(answer.selection === "Add New Product") {
-        //   addNew();
-        //} 
+        else if(answer.selection === "Add New Product") {
+          addNew();
+        } 
         else if(answer.selection === "Exit Menu") {
           exitMenu();
         };
@@ -90,101 +90,122 @@ function lowItems() {
 function addInv() {
   connection.query("SELECT item_id, product_name, stock_quantity FROM products", function(err, res) {
     if (err) throw err;
-
     console.table(res);
-    displayMenu();
-  });
 
-  inquirer
-  .prompt([
-    {
-      name: "item",
-      type: "rawlist",
-      choices: function() {
-        var itemsArray = [];
-        for (var i = 0; i < res.length; i++) {
-          itemsArray.push(res[i].item_id);
-        }
-        return itemsArray;
+    inquirer
+    .prompt([
+      {
+        name: "itemId",
+        type: "rawlist",
+        choices: function() {
+          var itemsArray = [];
+          for (var i = 0; i < res.length; i++) {
+            itemsArray.push(res[i].item_id);
+          }
+          return itemsArray;
+        },
+        message: "\nSelect the ID of the product to which you would like to add inventory.".yellow
       },
-      message: "\nSelect a product to add inventory".yellow
-    },
-    {
-      name: "units",
-      type: "input",
-      message: "\nHow many units would you like to add?".yellow
-    }
-  ])
-  .then(function(answer) {
-
-    for (var i = 0; i < res.length; i++) {
-      var itemId = res[i].item_id;
-      if (itemId === answer.item) {
-        connection.query("UPDATE products SET stock_quantity = stock_quantity "+answer.units+" WHERE item_id ="+answer.item, function(err, res) {
-          if (err) throw err;
-        });
+      {
+        name: "units",
+        type: "input",
+        message: "\nHow many units would you like to add?".yellow
       }
-    }
-    connection.query("SELECT item_id, product_name, stock_quantity FROM products WHERE item_id ="+answer.item, function(err, res) {
-      if (err) throw err;
-      console.log("The inventory was successfully updated.")
-      console.table(res);
-      displayMenu();
+    ])
+    .then(function(answer) {
+      // Update the item in the db 
+      for (var i = 0; i < res.length; i++) {
+    
+        if (res[i].item_id === answer.itemId) {
+          
+          var quantity = +res[i].stock_quantity + +answer.units;
+          console.log("quantity", quantity);
+
+          connection.query("UPDATE products SET ? WHERE ?",
+            [
+              {stock_quantity: quantity},
+              {item_id: answer.itemId}
+            ],
+            function(err) {
+              if (err) throw err;
+              console.log("\nStock quantity was successfully updated.")
+              displayMenu();
+          });
+        }
+      }
     });
-
   });
+};
 
 
+
+function addNew() {
+    
+  connection.query("SELECT department_name FROM products GROUP BY department_name", function(err, res) {
+    if (err) throw err;
+    console.table(res);
+
+    inquirer
+    .prompt([
+      {
+        name: "dept",
+        type: "rawlist",
+        choices: function() {
+          var itemsArray = [];
+          for (var i = 0; i < res.length; i++) {
+            itemsArray.push(res[i].department_name);
+          }
+          return itemsArray;
+        },
+        message: "\nEnter the department name."
+      },
+      {
+        name: "item",
+        type: "input",
+        message: "Enter the product name."
+      },
+      {
+        name: "price",
+        type: "input",
+        message: "Enter the price per unit.",
+        validate: function(value) {
+          if (isNaN(value) === false) {
+            return true;
+          }
+          return false;
+        }
+      },
+      {
+        name: "quantity",
+        type: "input",
+        message: "Enter the quantity.",
+        validate: function(value) {
+          if (isNaN(value) === false) {
+            return true;
+          }
+          return false;
+        }
+      }
+    ])
+    .then(function(answer) {
+      //Insert the new item into the db
+      connection.query(
+        "INSERT INTO products SET ?",
+        {
+          product_name: answer.item,
+          department_name: answer.dept,
+          price: answer.price || 0,
+          stock_quantity: answer.quantity || 0
+        },
+        function(err) {
+          if (err) throw err;
+          console.log("\nThe product was added successfully!".yellow);
+          displayMenu();
+        }
+      );
+    });
+  });
 }
-
-
-
-
-
-// function addNew() {
-//     inquirer
-//     .prompt([
-//       {
-//         name: "item",
-//         type: "input",
-//         message: "What is the item you would like to submit?"
-//       },
-//       {
-//         name: "category",
-//         type: "input",
-//         message: "What category would you like to place your auction in?"
-//       },
-//       {
-//         name: "startingBid",
-//         type: "input",
-//         message: "What would you like your starting bid to be?",
-//         validate: function(value) {
-//           if (isNaN(value) === false) {
-//             return true;
-//           }
-//           return false;
-//         }
-//       }
-//     ])
-//     .then(function(answer) {
-//       // when finished prompting, insert a new item into the db with that info
-//       connection.query(
-//         "INSERT INTO auctions SET ?",
-//         {
-//           item_name: answer.item,
-//           category: answer.category,
-//           starting_bid: answer.startingBid || 0,
-//           highest_bid: answer.startingBid || 0
-//         },
-//         function(err) {
-//           if (err) throw err;
-//           console.log("Your auction was created successfully!");
-//           // re-prompt the user for if they want to bid or post
-//           start();
-//         }
-//       );
-//     });
-// }
 
 function exitMenu() {
   connection.end();
