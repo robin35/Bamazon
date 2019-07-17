@@ -9,7 +9,7 @@ Here’s how it works:
     Initiate the customer side of the application by entering 'node bamazonCustomer.js' in the CLI.  Follow the prompts to make a sale.
     	You will be presented with a list of items available for sale.
     	Select an item to puchase.
-    	Select the quantity.  If the quantity is available, the app will proceed; if not, you will be presented with a error message.
+    	Select the quantity.  If the quantity is available, the app will proceed; if not, you will be presented with an error message.
     	The app will sum your purchase
 
     Initiate the business side of the application by entering 'node bamazonManager.js' in the CLI.  Follow the prompts to display the reports.
